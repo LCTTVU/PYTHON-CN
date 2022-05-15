@@ -6,6 +6,7 @@ def input_handler(user_input):
     if (user_input == ""):
         return user_input
     if (user_input == "!quit"):
+        s.sendall("!quit\n".encode('utf-8'))
         s.close()
         exit(0)
     if (user_input == "!who"):
@@ -80,6 +81,7 @@ def handshake():
     msg = "HELLO-FROM %s\n" % (username)
     s.sendall(msg.encode('utf-8'))
     received_msg = s.recv(1024).decode('utf-8')
+    s.sendall("!quit\n".encode('utf-8'))
     s.close()
     if (received_msg == "IN-USE\n"):
         print(received_msg)
