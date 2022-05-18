@@ -1,4 +1,4 @@
-received_msg = "SEND bucac hi\n"
+received_msg = "SEND testuser testmsg\n"
 if (received_msg.startswith("SEND")):
     received_msg = received_msg[5:]
     forward_user = received_msg.partition(" ")[0]
