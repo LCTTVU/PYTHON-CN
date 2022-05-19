@@ -9,14 +9,13 @@ s.bind((HOST, PORT))
 
 user_list = {}
 
-user_limit = 1
+user_limit = 128
 
 def client_handler(conn,addr):
     print(f"Connected by {addr}")
     client_connected = True
     while client_connected:
         try:
-            #print(f"user_list: {user_list}")
             received_msg = conn.recv(2048).decode('utf-8')
             while not received_msg.endswith("\n"):
                 received_msg += conn.recv(2048).decode('utf-8')
@@ -44,22 +43,18 @@ def client_handler(conn,addr):
                     response = f"HELLO {client_name}"
                     conn.sendall(f"{response}\n".encode('utf-8'))
                     print(f"(Server): {response}")
-                    #print(f"{client_name}")
             
-            elif (received_msg == "!quit\n"):
-                client_connected = False
-                del user_list[client_name]
-                print(f"{addr} disconnected")
+            #elif (received_msg == "!quit\n"):
+            #    client_connected = False
+            #    del user_list[client_name]
+            #    print(f"{addr} disconnected")
             
             elif (received_msg == "WHO\n"):
                 response = "WHO-OK"
-                #print(f"user_list: {user_list}")
-                #print(f"This is the conn before: {conn}")
                 for key, value in user_list.items():
                     response += f" {key}"
                 conn.sendall(f"{response}\n".encode('utf-8'))
                 print(f"(Server): {response}")
-                #print(f"This is the conn after: {conn}")
             
             elif (received_msg.startswith("SEND")):
                 sender = client_name
@@ -71,7 +66,6 @@ def client_handler(conn,addr):
                     conn.sendall(f"{response}".encode('utf-8'))
                     print(f"(Server): {response}")
                 elif recipient not in user_list.keys():
-                    #print(f"Unknown recipient {recipient}")
                     response = "UNKNOWN"
                     conn.sendall(f"{response}\n".encode('utf-8'))
                     print(f"(Server): {response}")
@@ -79,7 +73,6 @@ def client_handler(conn,addr):
                     recipient_conn = user_list[recipient]
                     response = f"DELIVERY {sender} {msg}"
                     recipient_conn.sendall(f"{response}\n".encode('utf-8'))
-                    #print(f"(Server to {recipient}): {response}")
                     conn.sendall(f"SEND-OK\n".encode('utf-8'))
                     print(f"(Server): SEND-OK")
                     
