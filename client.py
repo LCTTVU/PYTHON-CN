@@ -91,9 +91,12 @@ def handshake():
     s.sendall("!quit\n".encode('utf-8'))
     s.close()
     if (received_msg == "IN-USE\n"):
-        print(received_msg)
+        print("Username already exists.")
         username = handshake()
-    if (received_msg == "BUSY\n"):
+    elif (received_msg == "BAD-RQST-BODY\n"):
+        print("Username cannot be empty.")
+        username = handshake()
+    elif (received_msg == "BUSY\n"):
         print(received_msg)
         exit(0)
     return username

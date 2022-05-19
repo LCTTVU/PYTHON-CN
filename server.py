@@ -9,8 +9,7 @@ s.bind((HOST, PORT))
 
 user_list = {}
 
-user_limit = 128
-
+user_limit = 1
 
 def client_handler(conn,addr):
     print(f"Connected by {addr}")
@@ -24,13 +23,17 @@ def client_handler(conn,addr):
             print(f"{addr}: {received_msg[:-1]}")
             
             if (received_msg.startswith("HELLO-FROM")):
-                client_name = received_msg.partition(" ")[2]
-                client_name = client_name[:-1]
+                client_name = received_msg[11:-1]
                 if (len(user_list.keys()) == user_limit):
                     response = "BUSY"
                     conn.sendall(f"{response}\n".encode('utf-8'))
                     print(f"(Server): {response}")
                     client_connected = False
+                elif not client_name:
+                    response = "BAD-RQST-BODY\n"
+                    conn.sendall(f"{response}".encode('utf-8'))
+                    print(f"(Server): {response}")
+                    client_connected = False              
                 elif (client_name in user_list.keys()):
                     response = "IN-USE"
                     conn.sendall(f"{response}\n".encode('utf-8'))
@@ -76,7 +79,7 @@ def client_handler(conn,addr):
                     recipient_conn = user_list[recipient]
                     response = f"DELIVERY {sender} {msg}"
                     recipient_conn.sendall(f"{response}\n".encode('utf-8'))
-                    print(f"(Server to {recipient}): {response}")
+                    #print(f"(Server to {recipient}): {response}")
                     conn.sendall(f"SEND-OK\n".encode('utf-8'))
                     print(f"(Server): SEND-OK")
                     
@@ -92,7 +95,6 @@ def client_handler(conn,addr):
             print(f"{addr} disconnected")
             conn.close()
             break
-        
         except Exception as e:
             print(e)
             conn.close()
