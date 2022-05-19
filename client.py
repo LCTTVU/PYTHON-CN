@@ -28,11 +28,11 @@ def output_handler(received_message):
         message = received_message.partition(" ")[2]
         message = "FROM: " + username + "\nMESSAGE: " + message
         print(message)
-    if (received_message.startswith("WHO-OK")):
+    elif (received_message.startswith("WHO-OK")):
         message = received_message[7:]
         message = "Online users: " + message
         print(message)
-    if (received_message.startswith("HELLO")):
+    else:
         print(received_message)
 
 def send_func():
@@ -65,10 +65,17 @@ def receive_func():
 
             received_message = ''.join(chunks)
             chunks = []
+            output_handler(received_message)
         except ConnectionAbortedError:
             print("Connection closed.")
+            s.close()
             exit(0)
-        output_handler(received_message)
+        except ConnectionResetError:
+            print("Server closed")
+            s.close()
+            exit(0)
+        
+        
     
 
 

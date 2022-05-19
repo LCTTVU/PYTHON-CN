@@ -9,7 +9,7 @@ s.bind((HOST, PORT))
 
 user_list = {}
 
-
+user_limit = 128
 
 
 def client_handler(conn,addr):
@@ -21,18 +21,26 @@ def client_handler(conn,addr):
             received_msg = conn.recv(2048).decode('utf-8')
             while not received_msg.endswith("\n"):
                 received_msg += conn.recv(2048).decode('utf-8')
-            print(f"{addr}: {received_msg}")
+            print(f"{addr}: {received_msg[:-1]}")
             
             if (received_msg.startswith("HELLO-FROM")):
                 client_name = received_msg.partition(" ")[2]
                 client_name = client_name[:-1]
-                if client_name in user_list.keys():
-                    conn.sendall("IN-USE\n".encode('utf-8'))
-                    print(f"Username {client_name} in use.")
+                if (len(user_list.keys()) == user_limit):
+                    response = "BUSY"
+                    conn.sendall(f"{response}\n".encode('utf-8'))
+                    print(f"(Server): {response}")
+                    client_connected = False
+                elif (client_name in user_list.keys()):
+                    response = "IN-USE"
+                    conn.sendall(f"{response}\n".encode('utf-8'))
+                    print(f"(Server): {response}")
                     client_connected = False
                 else:
                     user_list[client_name] = conn
-                    conn.sendall(f"HELLO {client_name}\n".encode('utf-8'))
+                    response = f"HELLO {client_name}"
+                    conn.sendall(f"{response}\n".encode('utf-8'))
+                    print(f"(Server): {response}")
                     #print(f"{client_name}")
             
             elif (received_msg == "!quit\n"):
@@ -42,28 +50,40 @@ def client_handler(conn,addr):
             
             elif (received_msg == "WHO\n"):
                 response = "WHO-OK"
-                print(f"user_list: {user_list}")
+                #print(f"user_list: {user_list}")
                 #print(f"This is the conn before: {conn}")
                 for key, value in user_list.items():
                     response += f" {key}"
-                conn.send(f"{response}\n".encode('utf-8'))
+                conn.sendall(f"{response}\n".encode('utf-8'))
+                print(f"(Server): {response}")
                 #print(f"This is the conn after: {conn}")
             
             elif (received_msg.startswith("SEND")):
                 sender = client_name
-                received_msg = received_msg[5:]
+                received_msg = received_msg[5:-1]
                 recipient = received_msg.partition(" ")[0]
                 msg = received_msg.partition(" ")[2]
-                if recipient not in user_list.keys():
-                    conn.sendall(f"UNKNOWN\n".encode('utf-8'))
+                if not msg:
+                    response = "BAD-RQST-BODY\n"
+                    conn.sendall(f"{response}".encode('utf-8'))
+                    print(f"(Server): {response}")
+                elif recipient not in user_list.keys():
+                    #print(f"Unknown recipient {recipient}")
+                    response = "UNKNOWN"
+                    conn.sendall(f"{response}\n".encode('utf-8'))
+                    print(f"(Server): {response}")
                 else:
                     recipient_conn = user_list[recipient]
-                    recipient_conn.sendall(f"DELIVERY {sender} {msg}\n".encode('utf-8'))
+                    response = f"DELIVERY {sender} {msg}"
+                    recipient_conn.sendall(f"{response}\n".encode('utf-8'))
+                    print(f"(Server to {recipient}): {response}")
                     conn.sendall(f"SEND-OK\n".encode('utf-8'))
+                    print(f"(Server): SEND-OK")
+                    
             else:
                 response = "BAD-RQST-HDR\n"
                 conn.sendall(f"{response}".encode('utf-8'))
-                print(response)
+                print(f"(Server): {response}")
             
         except (OSError, ConnectionAbortedError) as e:
             print(e)
